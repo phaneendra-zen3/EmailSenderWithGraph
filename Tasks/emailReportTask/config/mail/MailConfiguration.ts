@@ -1,3 +1,4 @@
+import { AADAppConfiguration } from "./AADAppConfiguration";
 import { RecipientsConfiguration } from "./RecipientsConfiguration";
 import { SmtpConfiguration } from "./SmtpConfiguration";
 
@@ -8,13 +9,15 @@ export class MailConfiguration {
   private ccRecipientsConfig: RecipientsConfiguration;
   private smtpConfig: SmtpConfiguration;
   private defaultDomain: string;
+  private aadAppConfig: AADAppConfiguration;
 
-  constructor($mailSubject: string, $toRecipientsConfig: RecipientsConfiguration, $ccRecipientsConfig: RecipientsConfiguration, $smtpConfig: SmtpConfiguration, $defaultDomain: string) {
+  constructor($mailSubject: string, $toRecipientsConfig: RecipientsConfiguration, $ccRecipientsConfig: RecipientsConfiguration, $smtpConfig: SmtpConfiguration, $defaultDomain: string, $aadAppConfig: AADAppConfiguration) {
     this.mailSubject = $mailSubject;
     this.toRecipientsConfig = $toRecipientsConfig;
     this.ccRecipientsConfig = $ccRecipientsConfig;
     this.smtpConfig = $smtpConfig;
     this.defaultDomain = $defaultDomain;
+    this.aadAppConfig= $aadAppConfig;
   }
 
   /**
@@ -64,5 +67,13 @@ export class MailConfiguration {
   public set $mailSubject(value: string) {
     this.mailSubject = value;
   }
+
+/**
+   * Getter $aadAppConfig
+   * @return {AADAppConfiguration}
+   */
+ public get $aadAppConfig(): AADAppConfiguration {
+  return this.aadAppConfig;
+}
 
 }

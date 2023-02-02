@@ -4,13 +4,29 @@ import { MailAddressViewModel } from "./model/viewmodel/MailAddressViewModel";
 import { Report } from "./model/Report";
 import { MailError } from "./exceptions/MailError";
 import { isNullOrUndefined } from "util";
+import { ClientSecretCredential} from '@azure/identity';
+import { Client} from '@microsoft/microsoft-graph-client';
+import { Message } from '@microsoft/microsoft-graph-types';
+import { TokenCredentialAuthenticationProvider } from
+  '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
+
 const nodemailer = require("nodemailer");
 const url = require("url");
 
 export class EmailSender implements IReportSender {
   public async sendReportAsync(report: Report, htmlReportMessage: string, mailConfiguration: MailConfiguration): Promise<boolean> {
     const mailAddressViewModel = new MailAddressViewModel(report, mailConfiguration);
-
+    if(!isNullOrUndefined(mailConfiguration.$aadAppConfig.$clientSecret))
+    {
+      try{
+      const result=await this.sendGraphMailAsync(report,htmlReportMessage,mailConfiguration)
+      console.log(`Mail Sent Successfully Graph: ${result}`);
+      return true;
+      }
+      catch(err) {
+        throw new MailError(err);
+      }
+    }
     let smtpUrlProvided = mailConfiguration.$smtpConfig.$smtpHost;
     console.log(`Using SmtpHost URL: ${smtpUrlProvided}`);
     smtpUrlProvided = smtpUrlProvided.includes("://") ? smtpUrlProvided : "smtp://" + smtpUrlProvided;
@@ -86,4 +102,45 @@ export class EmailSender implements IReportSender {
       });
     });
   }
+
+  public async sendGraphMailAsync(report: Report, htmlReportMessage: string, mailConfiguration: MailConfiguration) {
+    const mailAddressViewModel = new MailAddressViewModel(report, mailConfiguration);
+    let _deviceCodeCredential: ClientSecretCredential | undefined = undefined;
+    let _userClient: Client | undefined = undefined;
+    let graphUserScopes: string[] = [];
+        graphUserScopes.push("https://graph.microsoft.com/.default")
+    _deviceCodeCredential = new ClientSecretCredential(
+        
+      mailConfiguration.$aadAppConfig.$tenantId, // The tenant ID in Azure Active Directory
+      mailConfiguration.$aadAppConfig.$clientId, // The app registration client Id in the AAD tenant
+      mailConfiguration.$aadAppConfig.$clientSecret // The app registration secret for the registered application
+    );    
+  const authProvider = new TokenCredentialAuthenticationProvider(_deviceCodeCredential, {
+      scopes: graphUserScopes
+    });
+  
+  _userClient = Client.initWithMiddleware({
+    authProvider: authProvider
+  });
+  const message: Message = {
+    subject: mailConfiguration.$mailSubject,
+    body: {
+      content: htmlReportMessage,
+      contentType: 'text'
+    },
+    toRecipients: [
+      {
+          emailAddress: {
+            address: 'vsobmodscti@microsoft.com'
+          }
+          
+      }
+    ]
+  };
+
+  return _userClient.api('users/tfsmladm@microsoft.com/sendMail')
+  .post({
+    message: message
+  });
+}
 }

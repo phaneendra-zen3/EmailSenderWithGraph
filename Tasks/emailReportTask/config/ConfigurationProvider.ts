@@ -13,6 +13,7 @@ import { PipelineConfiguration } from "./pipeline/PipelineConfiguration";
 import { PipelineType } from "./pipeline/PipelineType";
 import { StringUtils } from "../utils/StringUtils";
 import { isNullOrUndefined } from "util";
+import { AADAppConfiguration } from "./mail/AADAppConfiguration";
 
 export class ConfigurationProvider implements IConfigurationProvider {
   private pipelineConfiguration: PipelineConfiguration;
@@ -80,6 +81,9 @@ export class ConfigurationProvider implements IConfigurationProvider {
     const password = tl.getEndpointAuthorizationParameter(smtpConnectionId, "Password", true);
     const enableTLS = tl.getBoolInput(TaskConstants.ENABLETLS_INPUTKEY, true);
 
+    const aadAppvalues =tl.getEndpointAuthorizationParameter(smtpConnectionId, "Password", true);
+    const aadAppConfig = this.getGraphConfiguration(aadAppvalues);
+
     const smtpConfig = new SmtpConfiguration(userName, password, smtpHost, enableTLS);
 
     // Mail Subject
@@ -101,7 +105,7 @@ export class ConfigurationProvider implements IConfigurationProvider {
 
     const defaultDomain = tl.getInput(TaskConstants.DEFAULTDOMAIN_INPUTKEY, true);
 
-    this.mailConfiguration = new MailConfiguration(mailSubject, toRecipientsConfiguration, ccRecipientsConfiguration, smtpConfig, defaultDomain);
+    this.mailConfiguration = new MailConfiguration(mailSubject, toRecipientsConfiguration, ccRecipientsConfiguration, smtpConfig, defaultDomain,aadAppConfig);
   }
 
   private initReportDataConfiguration(): void {
@@ -166,4 +170,33 @@ export class ConfigurationProvider implements IConfigurationProvider {
       default: return GroupTestResultsBy.Run;
     }
   }
+
+  private getGraphConfiguration(graphvalues : string) : AADAppConfiguration
+   {
+    if(graphvalues.toLocaleLowerCase().includes('clientId'))
+    {
+      let splitvalue =graphvalues.split(',');
+      let clientId
+      let tenantId
+      let clientSecret
+      for(let i=0;i<splitvalue.length;i++)
+      {
+        if(splitvalue.toLocaleString().includes('clientId'))
+        {
+          clientId = splitvalue[i].split(':')[1]
+        }
+        if(splitvalue.toLocaleString().includes('tenantId'))
+        {
+          tenantId = splitvalue[i].split(':')[1]
+        }
+        if(splitvalue.toLocaleString().includes('clientSecret'))
+        {
+          clientSecret = splitvalue[i].split(':')[1]
+        }
+        
+      }
+      return new AADAppConfiguration(clientId,clientSecret,tenantId);
+    }
+    return null;
+   }
 }

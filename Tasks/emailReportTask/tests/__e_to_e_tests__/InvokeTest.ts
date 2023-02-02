@@ -16,12 +16,15 @@ import { HTMLReportCreator } from "../../htmlreport/HTMLReportCreator";
 import { isNullOrUndefined } from "util";
 import { EmailSender } from "../../EmailSender";
 import { TelemetryLogger } from "../../telemetry/TelemetryLogger";
+import { AADAppConfiguration } from "../../config/mail/AADAppConfiguration";
 
 const fs = require("fs");
 const accessKey = process.env.AccessKey;
 const smtpUser = process.env.SMTPUSER;
 const smtpPassword = process.env.SMTPPASSWORD;
-
+const clientId= process.env.clientId;
+const tenantId=process.env.tenantId;
+const clientSecret=process.env.clientSecret;
 
 export class FileWriter {
 
@@ -49,7 +52,8 @@ export class MockConfigProvider implements IConfigurationProvider {
     return new MailConfiguration("[{environmentStatus}] {passPercentage} tests passed",
       new RecipientsConfiguration("xyz@email.com", false, false, false, false),
       new RecipientsConfiguration("", false, false, false, false),
-      new SmtpConfiguration(smtpUser, smtpPassword, "smtp.live.com", true), "test.com");
+      new SmtpConfiguration(smtpUser, smtpPassword, "smtp.live.com", true), "test.com", 
+      new AADAppConfiguration(clientId,tenantId,clientSecret));
   }
 
   getReportDataConfiguration(): ReportDataConfiguration {
